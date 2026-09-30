@@ -187,12 +187,12 @@ export function sortTableRows(
 }
 
 const COLUMN_LABELS: Record<string, string> = {
-  volumen: 'Maatstaf',
-  volumen_waarde: 'Volumen',
-  gewicht: 'Gewicht',
-  product: 'Product',
-  product_met_uitkeringsfactor: 'Product met uitkeringsfactor',
-  cluster: 'Cluster',
+  'volumen': 'Maatstaf',
+  'volumen_waarde': 'Volumen',
+  'gewicht': 'Gewicht',
+  'product': 'Product',
+  'product_met_uitkeringsfactor': 'Product met uitkeringsfactor',
+  'cluster': 'Cluster',
   'totaal GF': 'Totaal GF'
 }
 

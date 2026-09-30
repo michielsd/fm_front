@@ -18,7 +18,7 @@ async function onLogout() {
           src="/fin_monitor.png"
           alt=""
           class="h-8 w-auto shrink-0"
-        />
+        >
         <span class="text-sm font-semibold tracking-tight">
           FIN monitor
         </span>
