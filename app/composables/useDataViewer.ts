@@ -35,11 +35,13 @@ function buildDataViewerUrl(base: string, filters: DataViewerFilters): string {
 
 export function useDataViewer(filters: Ref<DataViewerFilters> | ComputedRef<DataViewerFilters>) {
   const config = useRuntimeConfig()
+  const { authedFetch } = useAuth()
   const url = computed(() => buildDataViewerUrl(config.public.apiBase, unref(filters)))
 
   const { data, pending, error, refresh } = useFetch<DataViewerResponse>(url, {
     key: () => `dataviewer:${url.value}`,
-    watch: [url]
+    watch: [url],
+    $fetch: authedFetch
   })
 
   const selectors = computed(() => data.value?.selectors ?? {})

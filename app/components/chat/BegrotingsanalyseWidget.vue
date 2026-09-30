@@ -6,7 +6,28 @@ import { formatMillion } from '~/utils/begrotingsanalyseChart'
 
 const props = defineProps<{
   spec: BegrotingsanalyseChartSpec
+  showToolLink?: boolean
 }>()
+
+const { conversationId } = useChatStream()
+
+const toolTo = computed(() => {
+  const params = props.spec.params
+  if (!props.showToolLink || !params?.gemeente || !params.jaar || !params.verslagsoort || !params.circulaire) {
+    return ''
+  }
+  const query = new URLSearchParams({
+    gemeente: params.gemeente,
+    jaar: params.jaar,
+    verslagsoort: params.verslagsoort,
+    circulaire: params.circulaire,
+    overhead: params.overhead ? '1' : '0'
+  })
+  if (conversationId.value) {
+    query.set('conversation', conversationId.value)
+  }
+  return `/tools/begrotingsanalyse?${query.toString()}`
+})
 
 const colors = ['#2563eb', '#d97706']
 
@@ -53,13 +74,22 @@ const tooltipTriggers = {
 
 <template>
   <div class="overflow-hidden rounded-xl border border-default bg-elevated/40">
-    <div class="border-b border-default px-4 py-3">
-      <p class="font-medium text-highlighted">
-        {{ spec.name }}
-      </p>
-      <p class="text-xs text-muted">
-        {{ spec.unit }}
-      </p>
+    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-default px-4 py-3">
+      <div>
+        <p class="font-medium text-highlighted">
+          {{ spec.name }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ spec.unit }}
+        </p>
+      </div>
+
+      <UButton
+        v-if="toolTo"
+        :to="toolTo"
+        icon="i-lucide-sliders-horizontal"
+        label="Open in de tool"
+      />
     </div>
 
     <div class="space-y-3 px-4 py-4">

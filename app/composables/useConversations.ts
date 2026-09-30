@@ -2,7 +2,7 @@ import type { ConversationDetail, ConversationSummary } from '~/types/chat'
 
 export function useConversations() {
   const config = useRuntimeConfig()
-  const { ownerHeaders } = useOwnerKey()
+  const { apiFetch } = useAuth()
   const conversations = useState<ConversationSummary[]>('chat-conversations', () => [])
   const pending = useState('chat-conversations-pending', () => false)
   const error = useState<string | null>('chat-conversations-error', () => null)
@@ -24,9 +24,7 @@ export function useConversations() {
     pending.value = true
     error.value = null
     try {
-      const response = await fetch(conversationsUrl(), {
-        headers: ownerHeaders()
-      })
+      const response = await apiFetch(conversationsUrl())
       if (!response.ok) {
         throw new Error(await parseError(response, 'Failed to load conversations'))
       }
@@ -41,9 +39,7 @@ export function useConversations() {
   }
 
   async function fetchConversation(id: string): Promise<ConversationDetail> {
-    const response = await fetch(conversationsUrl(id), {
-      headers: ownerHeaders()
-    })
+    const response = await apiFetch(conversationsUrl(id))
     if (!response.ok) {
       throw new Error(await parseError(response, 'Conversation not found'))
     }
@@ -51,11 +47,10 @@ export function useConversations() {
   }
 
   async function renameConversation(id: string, title: string) {
-    const response = await fetch(conversationsUrl(id), {
+    const response = await apiFetch(conversationsUrl(id), {
       method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json',
-        ...ownerHeaders()
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ title })
     })
@@ -68,9 +63,8 @@ export function useConversations() {
   }
 
   async function deleteConversation(id: string) {
-    const response = await fetch(conversationsUrl(id), {
-      method: 'DELETE',
-      headers: ownerHeaders()
+    const response = await apiFetch(conversationsUrl(id), {
+      method: 'DELETE'
     })
     if (!response.ok) {
       throw new Error(await parseError(response, 'Failed to delete conversation'))

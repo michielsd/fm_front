@@ -8,7 +8,6 @@ const {
   renameConversation
 } = useConversations()
 const { conversationId, isStreaming, stopStreaming, clearMessages } = useChatStream()
-const { ensureOwnerKey } = useOwnerKey()
 
 const editingId = ref<string | null>(null)
 const draftTitle = ref('')
@@ -19,7 +18,6 @@ const activeId = computed(() => {
 })
 
 onMounted(() => {
-  ensureOwnerKey()
   refreshConversations()
 })
 

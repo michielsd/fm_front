@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isTextUIPart } from 'ai'
+import type { BegrotingsanalyseParams } from '~/types/begrotingsanalyse-widget'
 
 definePageMeta({
   layout: 'chat'
@@ -20,6 +21,7 @@ const {
   widgetsForMessage,
   hydrateConversation,
   sendMessage,
+  analyseBegrotingsanalyse,
   stopStreaming,
   clearMessages
 } = useChatStream()
@@ -27,6 +29,11 @@ const {
 const { fetchConversation } = useConversations()
 
 const hasMessages = computed(() => uiMessages.value.length > 0)
+const handoffStarted = ref(false)
+
+function queryValue(value: unknown) {
+  return typeof value === 'string' ? value : ''
+}
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -57,7 +64,7 @@ const quickChats = [
     icon: 'i-lucide-help-circle'
   },
   {
-    label: 'Toon rekenmodeltotalen voor Eindhoven',
+    label: 'Toon de clustertotalen voor Eindhoven',
     icon: 'i-lucide-calculator'
   },
   {
@@ -102,6 +109,41 @@ watch(
     } finally {
       loadingConversation.value = false
     }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => ({
+    tool: queryValue(route.query.tool),
+    loading: loadingConversation.value,
+    id: conversationId.value,
+    routeId: typeof route.params.id === 'string' ? route.params.id : ''
+  }),
+  async (state) => {
+    if (!import.meta.client || handoffStarted.value || state.loading) {
+      return
+    }
+    if (state.tool !== 'begrotingsanalyse' || !state.routeId || state.id !== state.routeId) {
+      return
+    }
+    const gemeente = queryValue(route.query.gemeente)
+    const jaar = queryValue(route.query.jaar)
+    const verslagsoort = queryValue(route.query.verslagsoort)
+    const circulaire = queryValue(route.query.circulaire)
+    if (!gemeente || !jaar || !verslagsoort || !circulaire) {
+      return
+    }
+    const params: BegrotingsanalyseParams = {
+      gemeente,
+      jaar,
+      verslagsoort,
+      circulaire,
+      overhead: route.query.overhead === '1' || route.query.overhead === 'true'
+    }
+    handoffStarted.value = true
+    await router.replace({ path: `/chat/${state.routeId}` })
+    await analyseBegrotingsanalyse(params)
   },
   { immediate: true }
 )

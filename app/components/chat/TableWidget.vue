@@ -5,11 +5,14 @@ import type { DataTableWidgetSpec } from '~/types/data-table-widget'
 import type { TableFilters } from '~/composables/useTables'
 import {
   buildSelectorItems,
+  columnLabel,
   formatCellValue,
   formatSortDirection,
   nextSortState,
   sortTableRows,
+  TABLE_FILTER_FIELDS,
   tableColumnKeys,
+  tableShowsFilters,
   type SortState
 } from '~/utils/dataTable'
 
@@ -20,17 +23,26 @@ const props = defineProps<{
 const { spec, filters, pending, error } = useChatTable(props.initialSpec)
 const sortState = ref<SortState>(null)
 
-const selectorEntries = computed(() =>
-  Object.entries(spec.value.selectors ?? {}).map(([field, definition]) => ({
+const selectorEntries = computed(() => {
+  if (!tableShowsFilters(spec.value.id)) {
+    return []
+  }
+  return Object.entries(spec.value.selectors ?? {}).map(([field, definition]) => ({
     field,
     label: definition.label ?? field,
     options: definition.options
   }))
-)
+})
 
-const selectorFieldNames = computed(
-  () => new Set(Object.keys(spec.value.selectors ?? {}))
-)
+const selectorFieldNames = computed(() => {
+  const fields = new Set(Object.keys(spec.value.selectors ?? {}))
+  if (!tableShowsFilters(spec.value.id)) {
+    for (const field of TABLE_FILTER_FIELDS) {
+      fields.add(field)
+    }
+  }
+  return fields
+})
 
 const filtersComplete = computed(() =>
   Boolean(
@@ -58,7 +70,7 @@ const columns = computed<TableColumn<Record<string, unknown>>[]>(() =>
           class: 'inline-flex items-center gap-1 font-medium hover:underline',
           onClick: () => { sortState.value = nextSortState(sortState.value, key) }
         },
-        [key, direction ? ` ${formatSortDirection(direction)}` : '']
+        [columnLabel(key), direction ? ` ${formatSortDirection(direction)}` : '']
       )
     },
     cell: ({ row }) => formatCellValue(row.getValue(key))

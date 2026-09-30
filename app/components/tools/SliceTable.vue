@@ -4,6 +4,7 @@ import type { TableColumn } from '@nuxt/ui'
 import type { TableFilters } from '~/composables/useTables'
 import {
   buildSelectorItems,
+  columnLabel,
   formatCellValue,
   formatSortDirection,
   nextSortState,
@@ -12,6 +13,13 @@ import {
   tableColumnKeys,
   type SortState
 } from '~/utils/dataTable'
+
+const props = defineProps<{
+  tableId: string
+  title: string
+  description: string
+  emptyDescription: string
+}>()
 
 const selectorValues = ref<TableFilters>({})
 const selectorsInitialized = ref(false)
@@ -34,17 +42,9 @@ const filtersComplete = computed(() =>
 
 const { tables, pending, error, refresh } = useTables(filters)
 
-const selectedTableId = ref<string>()
-
-const selectedTable = computed(() => {
-  const list = tables.value
-  if (list.length === 0) {
-    return null
-  }
-
-  const match = list.find(table => table.id === selectedTableId.value)
-  return match ?? list[0]
-})
+const selectedTable = computed(() =>
+  tables.value.find(table => table.id === props.tableId) ?? null
+)
 
 const selectorEntries = computed(() => {
   const selectors = selectedTable.value?.selectors
@@ -62,16 +62,7 @@ const selectorEntries = computed(() => {
 watch(
   tables,
   (list) => {
-    if (list.length === 0) {
-      selectedTableId.value = undefined
-      return
-    }
-
-    if (!list.some(table => table.id === selectedTableId.value)) {
-      selectedTableId.value = list[0]?.id ?? '0'
-    }
-
-    const table = list[0]
+    const table = list.find(item => item.id === props.tableId) ?? list[0]
     if (!table?.selectors) {
       return
     }
@@ -112,33 +103,6 @@ watch(
   { immediate: true }
 )
 
-function buildColumns(
-  rows: Record<string, unknown>[],
-  selectorFields: Set<string>
-): TableColumn<Record<string, unknown>>[] {
-  if (rows.length === 0) {
-    return []
-  }
-
-  return tableColumnKeys(rows, selectorFields).map(key => ({
-    accessorKey: key,
-    header: () => {
-      const isActive = sortState.value?.key === key
-      const direction = isActive ? sortState.value?.direction : undefined
-      return h(
-        'button',
-        {
-          type: 'button',
-          class: 'inline-flex items-center gap-1 font-medium hover:underline',
-          onClick: () => { sortState.value = nextSortState(sortState.value, key) }
-        },
-        [key, direction ? ` ${formatSortDirection(direction)}` : '']
-      )
-    },
-    cell: ({ row }) => formatCellValue(row.getValue(key))
-  }))
-}
-
 const selectorFieldNames = computed(
   () => new Set(Object.keys(selectedTable.value?.selectors ?? {}))
 )
@@ -154,33 +118,42 @@ const displayedRows = computed(() => {
   return sortTableRows(table.id, rows, sortState.value)
 })
 
-const columns = computed(() =>
-  buildColumns(displayedRows.value ?? [], selectorFieldNames.value)
-)
-
-const tableOptions = computed(() =>
-  tables.value.map((table, index) => ({
-    label: table.name ?? table.id ?? `Table ${index + 1}`,
-    value: table.id ?? String(index)
+const columns = computed<TableColumn<Record<string, unknown>>[]>(() =>
+  tableColumnKeys(displayedRows.value, selectorFieldNames.value).map(key => ({
+    accessorKey: key,
+    header: () => {
+      const isActive = sortState.value?.key === key
+      const direction = isActive ? sortState.value?.direction : undefined
+      return h(
+        'button',
+        {
+          type: 'button',
+          class: 'inline-flex items-center gap-1 font-medium hover:underline',
+          onClick: () => { sortState.value = nextSortState(sortState.value, key) }
+        },
+        [columnLabel(key), direction ? ` ${formatSortDirection(direction)}` : '']
+      )
+    },
+    cell: ({ row }) => formatCellValue(row.getValue(key))
   }))
 )
 
 useSeoMeta({
-  title: 'Tables',
-  description: 'Browse tabular data from the Lemon API.'
+  title: () => props.title,
+  description: () => props.description
 })
 </script>
 
 <template>
   <UPage>
     <UPageHeader
-      title="Tables"
-      description="Data loaded from the Lemon API."
+      :title="title"
+      :description="description"
     >
       <template #links>
         <UButton
           icon="i-lucide-refresh-cw"
-          label="Refresh"
+          label="Vernieuwen"
           color="neutral"
           variant="outline"
           :loading="pending"
@@ -190,18 +163,17 @@ useSeoMeta({
     </UPageHeader>
 
     <UPageBody>
-      <div class="mx-auto w-full max-w-6xl">
+      <div class="w-full space-y-4">
         <UAlert
           v-if="error"
           color="error"
           variant="subtle"
-          title="Failed to load tables"
+          title="Tabel laden mislukt"
           :description="error.message"
-          class="mb-6"
         />
 
         <div
-          v-if="pending && tables.length === 0"
+          v-if="pending && !selectedTable"
           class="flex items-center justify-center py-16 text-muted"
         >
           <UIcon
@@ -210,26 +182,7 @@ useSeoMeta({
           />
         </div>
 
-        <UEmpty
-          v-else-if="!pending && tables.length === 0"
-          icon="i-lucide-table"
-          title="No tables yet"
-          description="The API has not returned any table data."
-        />
-
-        <div
-          v-else-if="selectedTable"
-          class="space-y-4"
-        >
-          <USelect
-            v-if="tableOptions.length > 1"
-            v-model="selectedTableId"
-            :items="tableOptions"
-            value-key="value"
-            label-key="label"
-            class="max-w-xs"
-          />
-
+        <template v-else-if="selectedTable">
           <div
             v-if="selectorEntries.length > 0"
             class="flex flex-wrap gap-4"
@@ -256,15 +209,15 @@ useSeoMeta({
           <UEmpty
             v-if="!pending && !filtersComplete"
             icon="i-lucide-filter"
-            title="Select filters"
-            description="Choose a gemeente, circulaire, jaar, and prijzen type to load the table."
+            title="Kies filters"
+            description="Kies een gemeente, circulaire, jaar en prijzentype om de tabel te laden."
           />
 
           <UEmpty
             v-else-if="!pending && filtersComplete && (selectedTable.rows?.length ?? 0) === 0"
             icon="i-lucide-table"
-            title="No rows"
-            description="No au per maatstaf data found for the selected filters."
+            title="Geen rijen"
+            :description="emptyDescription"
           />
 
           <div
@@ -279,7 +232,14 @@ useSeoMeta({
               class="max-h-[70vh]"
             />
           </div>
-        </div>
+        </template>
+
+        <UEmpty
+          v-else-if="!pending"
+          icon="i-lucide-table"
+          title="Geen tabel"
+          description="De API heeft deze tabel niet teruggegeven."
+        />
       </div>
     </UPageBody>
   </UPage>

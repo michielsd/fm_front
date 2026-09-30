@@ -42,12 +42,14 @@ function buildTablesUrl(base: string, filters: TableFilters): string {
 
 export function useTables(filters: Ref<TableFilters> | ComputedRef<TableFilters>) {
   const config = useRuntimeConfig()
+  const { authedFetch } = useAuth()
 
   const url = computed(() => buildTablesUrl(config.public.apiBase, unref(filters)))
 
   const { data, pending, error, refresh } = useFetch<TablesResponse>(url, {
     key: () => `tables:${url.value}`,
-    watch: [url]
+    watch: [url],
+    $fetch: authedFetch
   })
 
   const tables = computed(() => data.value?.tables ?? [])

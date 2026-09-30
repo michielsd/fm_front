@@ -27,7 +27,10 @@ defineProps<{
     </template>
   </Suspense>
   <Suspense v-else-if="isBegrotingsanalyseChartSpec(widget)">
-    <LazyChatBegrotingsanalyseWidget :spec="widget" />
+    <LazyChatBegrotingsanalyseWidget
+      :spec="widget"
+      show-tool-link
+    />
     <template #fallback>
       <ChatTableWidgetSkeleton :name="widget.name" />
     </template>

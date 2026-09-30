@@ -13,6 +13,7 @@ function sameFilters(a: TableFilters, b: TableFilters) {
 
 export function useChatTable(initialSpec: DataTableWidgetSpec) {
   const config = useRuntimeConfig()
+  const { apiFetch } = useAuth()
   const spec = ref<DataTableWidgetSpec>(cloneDataTableWidgetSpec(initialSpec))
   const filters = ref<TableFilters>({ ...(initialSpec.filters ?? {}) })
   const pending = ref(false)
@@ -47,7 +48,7 @@ export function useChatTable(initialSpec: DataTableWidgetSpec) {
         }
       }
       const query = params.toString()
-      const response = await fetch(
+      const response = await apiFetch(
         query
           ? `${config.public.apiBase}/api/tables/?${query}`
           : `${config.public.apiBase}/api/tables/`

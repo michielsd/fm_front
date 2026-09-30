@@ -159,7 +159,7 @@ export function sortTableRows(
     return stableSort(rows, (a, b) => compareMaybeNumber(a[sort.key], b[sort.key], sort.direction))
   }
 
-  if (tableId === 'rekenmodel') {
+  if (tableId === 'au_per_maatstaf' || tableId === 'rekenmodel') {
     return stableSort(rows, (a, b) => {
       const aRank = DEFAULT_VOLUMEN_RANK.get(normalizeVolumenLabel(a.volumen))
       const bRank = DEFAULT_VOLUMEN_RANK.get(normalizeVolumenLabel(b.volumen))
@@ -184,6 +184,26 @@ export function sortTableRows(
   }
 
   return rows
+}
+
+const COLUMN_LABELS: Record<string, string> = {
+  volumen: 'Maatstaf',
+  volumen_waarde: 'Volumen',
+  gewicht: 'Gewicht',
+  product: 'Product',
+  product_met_uitkeringsfactor: 'Product met uitkeringsfactor',
+  cluster: 'Cluster',
+  'totaal GF': 'Totaal GF'
+}
+
+export const TABLE_FILTER_FIELDS = ['gemeente', 'circulaire', 'jaar', 'prijzen_type'] as const
+
+export function tableShowsFilters(tableId: string | undefined) {
+  return tableId !== 'au_per_maatstaf' && tableId !== 'rekenmodel' && tableId !== 'cluster_totals'
+}
+
+export function columnLabel(key: string) {
+  return COLUMN_LABELS[key] ?? key
 }
 
 export function tableColumnKeys(

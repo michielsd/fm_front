@@ -163,7 +163,7 @@ useSeoMeta({
     </UPageHeader>
 
     <UPageBody>
-      <div class="mx-auto w-full max-w-6xl">
+      <div class="w-full">
         <UAlert
           v-if="error"
           color="error"
